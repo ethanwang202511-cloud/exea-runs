@@ -68,6 +68,28 @@ runtime estimate excludes them. PertFormer (P20) already delivers the
 attention-architecture result, so leaving P30/P40 inert loses no headline
 finding.
 
+## Running in 3-hour batches (booking loop)
+
+The harness is batch-native — you never split the work by hand. Each booked
+10:00–13:00 slot is one batch; the manifest carries progress between them.
+
+- **Budget per batch:** `resume.sh` self-halts at `EXEA_RUN_BUDGET_SECONDS`
+  (default 9900s = 2h45m), 15 min under the 13:00 hard snapshot so it flushes
+  cleanly. It also honors an Exea-injected `EXEA_DEADLINE_UTC` and stops at the
+  earliest of the two. Do NOT raise it to a full 3h. (If Exea does NOT inject a
+  deadline and may start your job partway through the window, lower this value.)
+- **Day 1:** runner runs SETUP (installs + downloads ~8 GB once) then START.
+  **Every later day:** RESUME. `checkpoint_dir: .` keeps the datasets + trained
+  base model + manifest across the snapshot, so SETUP's idempotent staging is a
+  fast no-op on later days even if it re-runs.
+- **Booking loop:** book up to 5 slots (Exea's max), let them run, then check
+  progress and rebook 5 more until done. Estimated total ≈ 6–10 batches
+  (~15–25 GPU-hours ÷ ~2.75h usable per slot; a heavily-shared queue slice
+  means more batches).
+- **Done when:** every unit in `state/manifest.json` is `done` (or `gaveup` /
+  `skipped` for the optional GEARS/scGPT jobs). `state/last_run_summary.json`
+  shows the per-batch counts; both are pushed to GitHub by SAVE each batch.
+
 ## Debugging from the dashboard
 
 - Per-unit status: `state/manifest.json` (`done` / `skipped` / `failed` /
