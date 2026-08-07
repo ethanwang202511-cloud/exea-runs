@@ -3,7 +3,11 @@ exea_version: 1
 owner_email: YOUR_EMAIL@example.com          # <-- fill in before submitting
 github_username: ethanwang202511-cloud       # <-- confirm this is correct
 github_pat: ${EXEA_GITHUB_PAT}               # injected by the runner; do not hardcode a real token
-checkpoint_dir: ./state                       # what must survive the daily snapshot (manifest + checkpoints)
+checkpoint_dir: .                             # persist the WHOLE working dir across the daily snapshot:
+                                              # state/manifest.json + checkpoints, the trained base model,
+                                              # AND the ~8GB staged datasets/feature caches (data/). If only
+                                              # a subdir were snapshotted, those caches would be lost and
+                                              # every day would waste its slot re-downloading them.
 ---
 
 # exea-runs
