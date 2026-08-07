@@ -1,0 +1,28 @@
+# Datasets + model weights — staged on the server in setup.sh, never committed.
+data/
+*.h5ad
+*.gaf.gz
+hf_cache/
+.cache/
+
+# Feature caches / numpy memmaps (regenerable)
+*.npy
+*.npz
+
+# Checkpoints (large, regenerable). Manifest + results ARE tracked (below).
+*.pt
+*.pth
+state/checkpoints/
+
+# Python noise
+__pycache__/
+**/__pycache__/
+*.pyc
+.venv/
+venv/
+.DS_Store
+
+# Keep run state that enables cross-day resume + result visibility on GitHub:
+!state/manifest.json
+!state/last_run_summary.json
+# results/ is intentionally tracked (CSV/JSON tabular outputs).

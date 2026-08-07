@@ -1,0 +1,128 @@
+# Pre-registered Year-1 hypothesis lock for Phase-ITI
+# Locked: 2026-05-04 (Year-1 Q1)
+#
+# This YAML is the binding pre-registration for the Year-1 NeurIPS 2026
+# submission. Year-2 hypotheses (H3, H4, H0 phase diagram) live in iti_v2.yaml
+# and are locked at the start of Year 2.
+#
+# CRITICAL: Once results begin to accumulate, this file is APPEND-ONLY for
+# new (post-hoc, exploratory) analyses. Pre-registered claims must not be
+# rewritten in light of results.
+
+version: 1.0
+locked_date: 2026-05-04
+locking_rationale: |
+  Pre-registration locked before any result-conditional decisions.
+  Year-1 Q1 begins with empirical work.
+
+substrates_year1:
+  - name: animal_pose
+    sources:
+      - AP-10K
+      - Calms21
+      - MABe
+      - OpenMonkeyStudio
+    primary: true
+    backbone_default: dinov2_base   # for AP-10K (image)
+    backbone_video:   videomae_v2_base  # for Calms21/MABe (video)
+
+held_out_species_year1:
+  # Pre-committed binding pair (mammal + bird) per proposal §4 H1.
+  # Invertebrate (fly/Drosophila) is exploratory only.
+  binding_mammal:    "TBD-locked-by-Q2"   # candidate: Macaca mulatta or canid not in Q1 training set
+  binding_bird:      "TBD-locked-by-Q2"   # candidate: AP-10K bird species (e.g., chicken or AP-10K-bird)
+  exploratory_invertebrate: "Drosophila melanogaster (Murthy lab)"
+
+hypotheses:
+  H1:
+    statement: |
+      On 2 binding held-out species (mammal + bird), ITI with k=5 example
+      clips per held-out species achieves predicted-pose RMSE within 15%
+      of the SuperAnimal full-fine-tune baseline at k=5 on the same
+      species, while updating <= 1,000 parameters per held-out species.
+      95% bootstrap CI lower bound above the 15% threshold on BOTH
+      binding species.
+    metric: per-keypoint RMSE (px, normalized to bounding-box diagonal)
+    threshold: 1.15 * SuperAnimal_full_FT_RMSE  # within 15%
+    decision_rule: |
+      Accept H1 iff (a) ITI RMSE bootstrap-CI(95%) lower bound is
+      below 1.15 * SuperAnimal_full_FT_RMSE on BOTH binding species,
+      AND (b) ITI updates <= 1,000 parameters per held-out species.
+    failure_mode: |
+      If H1 fails on the binding pair: paper is rejected; project
+      consolidates to a smaller in-domain contribution.
+    binding: true
+    n_seeds: 3
+    k_eval: [1, 5, 16]
+
+  H2:
+    statement: |
+      ITI's improvement over the Morphological Null baseline (mean
+      training-species skeleton) is >= 30% RMSE reduction at k=5 on
+      both binding species.
+    metric: (RMSE_morpho_null - RMSE_iti) / RMSE_morpho_null
+    threshold: 0.30
+    binding: false
+    n_seeds: 3
+
+  H5a:
+    statement: |
+      At k=0 and k=1, learned-interpolation initialization beats
+      random-init token by >= 15% RMSE on the binding pose benchmark.
+    metric: (RMSE_random_init - RMSE_interp_init) / RMSE_random_init
+    threshold: 0.15
+    binding: true       # primary-binding per proposal §4
+    n_seeds: 3
+    k_eval: [0, 1]
+
+  H5b:
+    statement: |
+      Same as H5a but threshold >= 25% (would exceed prior-art SPoT/ATTEMPT
+      effect sizes). Reported, not binding.
+    binding: false
+    threshold: 0.25
+
+  H6:
+    statement: |
+      Of 8 ablation variants (no-token, no-LoRA, random-init token,
+      MAML, soft-prompt, full-FT, DINOv2+linear, Morphological Null),
+      at least 6 degrade by >= 10% on B2 metric.
+    binding: false
+    n_seeds: 1   # descoped per proposal §8 v1.2
+
+# H0 (substrate-invariant phase boundary) and H0-negative-control (a, b)
+# are locked in iti_v2.yaml at start of Year 2 once 3 substrates are
+# trained. Year-1 only: pose substrate. Pre-commit Year-2 metric:
+#   d* in normalized per-backbone Wasserstein space, sigmoid-fit from
+#   accuracy(distance) curve over >= 60 held-out identities per substrate.
+#   Tolerance: +/- 0.15 sigma (calibrated v1.3 power analysis).
+
+negative_results_policy:
+  - "Negative result on H1 binding mammal+bird: project consolidates."
+  - "Negative result on H5a binding: paper still submittable as
+     phase-diagram characterization at Spotlight tier."
+  - "Negative result on H2 (gap < 30%): report as 'how much of pose
+     is global locomotion vs species-specific nuance' finding."
+
+reward_hacking_controls:
+  - strict_held_out_genus: true   # no genus-level leak between train/eval
+  - n_seeds_default: 3
+  - permutation_test_alpha: 0.05
+  - bootstrap_ci_n_resamples: 1000
+
+compute_envelope_year1: 2500   # USD
+compute_envelope_total: 8000
+
+# Datasets locked
+datasets_year1:
+  AP-10K:
+    n_species: 54
+    license: "CC-BY-NC-SA-4.0 (Yu et al. NeurIPS 2021)"
+    splits: "official train/val + custom held-out species"
+  Calms21:
+    n_species: 1   # mouse, 3 strains
+    license: "CC-BY-4.0 (Sun et al.)"
+  MABe:
+    n_species: 2   # mouse, fly
+    license: "CC-BY-4.0"
+

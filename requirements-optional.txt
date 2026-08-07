@@ -1,0 +1,13 @@
+# Optional dependencies — MEDIUM/HIGH ROCm risk. Installed best-effort in
+# setup.sh with `|| true`; if any fails to build on ROCm the run still proceeds
+# and the jobs that need them soft-skip (their list_units() returns []).
+#
+# torch_geometric CORE ONLY (pure Python) — needed by cell-gears (GEARS).
+# Do NOT add torch-scatter / torch-sparse / pyg-lib: those are compiled HIP
+# extensions with no official ROCm wheels and are the single most fragile ROCm
+# install. cell-gears does not require them.
+torch_geometric>=2.4,<2.7
+# GEARS published-checkpoint audit (P30). Fail-soft.
+cell-gears>=0.1.2
+# scGPT-Perturb audit (P40). Fail-soft; install WITHOUT flash-attn.
+# scgpt  # uncomment on server if desired; keep flash-attn OUT (use_fast_transformer=False)
